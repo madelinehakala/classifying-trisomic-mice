@@ -1,0 +1,117 @@
+import scipy
+import numpy
+import matplotlib
+import pandas
+import sklearn
+
+
+from pandas import read_excel
+from pandas.plotting import scatter_matrix
+from matplotlib import pyplot
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+
+
+# Import SimpleImputer to deal with missing data
+from sklearn.impute import SimpleImputer
+
+print()
+
+# Load dataset
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00342/Data_Cortex_Nuclear.xls"
+names = ['MouseID', 'DYRK1A_N', 'ITSN1_N', 'BDNF_N', 'NR1_N', 'NR2A_N', 'pAKT_N', 'pBRAF_N', 'pCAMKII_N', 'pCREB_N', 'pELK_N', 'pERK_N', 'pJNK_N', 'PKCA_N', 'pMEK_N', 'pNR1_N', 'pNR2A_N', 'pNR2B_N', 'pPKCAB_N', 'pRSK_N', 'AKT_N', 'BRAF_N', 'CAMKII_N', 'CREB_N', 'ELK_N', 'ERK_N', 
+        'GSK3B_N', 'JNK_N', 'MEK_N', 'TRKA_N', 'RSK_N', 'APP_N', 'Bcatenin_N', 'SOD1_N', 'MTOR_N', 'P38_N', 'pMTOR_N', 'DSCR1_N', 'AMPKA_N', 'NR2B_N', 'pNUMB_N', 'RAPTOR_N', 'TIAM1_N', 'pP70S6_N', 'NUMB_N', 'P70S6_N', 'pGSK3B_N', 'pPKCG_N', 'CDK5_N', 'S6_N', 'ADARB1_N', 'AcetylH3K9_N', 
+        'RRP1_N', 'BAX_N', 'ARC_N', 'ERBB4_N', 'nNOS_N', 'Tau_N', 'GFAP_N', 'GluR3_N', 'GluR4_N', 'IL1B_N', 'P3525_N', 'pCASP9_N', 'PSD95_N', 'SNCA_N', 'Ubiquitin_N', 'pGSK3B_Tyr216_N', 'SHH_N', 'BAD_N', 'BCL2_N', 'pS6_N', 'pCFOS_N', 'SYP_N', 'H3AcK18_N', 'EGR1_N', 'H3MeK4_N', 'CaNA_N', 
+        'Genotype', 'Treatment', 'Behavior', 'class']
+dataset = read_excel(url, names=names)
+
+
+# Print dataset's dimensions
+print(f'Dataset Dimensions: {dataset.shape}')
+
+print()
+
+# Print dataset's first 20 rows
+print(dataset.head(20))
+
+print()
+
+# Print a statistical summary of dataset
+print(dataset.describe())
+
+print()
+
+# Print number of instances of each treatment class
+print(dataset.groupby('class').size())
+
+# Create box and whisker plot
+# dataset.plot(kind='box', subplots=True, layout=(50,50), sharex=False, sharey=False)
+# pyplot.show()
+
+# Create histograms
+# dataset.hist()
+# pyplot.show()
+
+# Create a scatter plot matrix (diagonal groupings = high correlation and predictable relationship)
+# scatter_matrix(dataset)
+# pyplot.show()
+
+
+# Only want to use certain columns for classification purposes (exclude MouseID, Genotype, Treatment, and Behavior)
+# "class" column will be the identifying treatment classes
+array = dataset.values
+X = array[:,1:78]
+y = array[:,81]
+
+# Account for missing data using a means approach
+imputer = SimpleImputer(strategy='mean', missing_values=numpy.nan)
+imputer = imputer.fit(X)
+X = imputer.transform(X)
+
+print(X)
+
+X_train, X_validation, Y_train, Y_validation = train_test_split(X, y, test_size = 0.20, random_state = 1)
+
+# Spot Check Algorithms
+models = []
+models.append(('LR', LogisticRegression(solver='liblinear', multi_class='ovr')))
+models.append(('LDA', LinearDiscriminantAnalysis()))
+models.append(('KNN', KNeighborsClassifier()))
+models.append(('CART', DecisionTreeClassifier()))
+models.append(('NB', GaussianNB()))
+models.append(('SVM', SVC(gamma='auto')))
+
+# Evaluate each model in turn
+results = []
+names = []
+for name, model in models:
+    kfold = StratifiedKFold(n_splits=10, random_state=1, shuffle=True)
+    cv_results = cross_val_score(model, X_train, Y_train, cv=kfold, scoring='accuracy')
+    results.append(cv_results)
+    names.append(name)
+    print('%s: %f (%f)' % (name, cv_results.mean(), cv_results.std()))
+    
+# Compare Algorithms
+pyplot.boxplot(results, labels=names)
+pyplot.title('Algorithm Comparison')
+pyplot.show()    
+     
+# Make predictions on validation dataset
+model = LinearDiscriminantAnalysis()
+model.fit(X_train, Y_train)
+predictions = model.predict(X_validation)    
+
+# Evaluate predictions
+print(accuracy_score(Y_validation, predictions))
+print(confusion_matrix(Y_validation, predictions))
+print(classification_report(Y_validation, predictions))
