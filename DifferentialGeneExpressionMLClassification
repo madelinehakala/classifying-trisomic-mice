@@ -56,19 +56,6 @@ print()
 # Print number of instances of each treatment class
 print(dataset.groupby('class').size())
 
-# Create box and whisker plot
-# dataset.plot(kind='box', subplots=True, layout=(50,50), sharex=False, sharey=False)
-# pyplot.show()
-
-# Create histograms
-# dataset.hist()
-# pyplot.show()
-
-# Create a scatter plot matrix (diagonal groupings = high correlation and predictable relationship)
-# scatter_matrix(dataset)
-# pyplot.show()
-
-
 # Only want to use certain columns for classification purposes (exclude MouseID, Genotype, Treatment, and Behavior)
 # "class" column will be the identifying treatment classes
 array = dataset.values
